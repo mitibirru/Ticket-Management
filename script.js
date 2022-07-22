@@ -4,12 +4,48 @@ let modalCont = document.querySelector(".modal-cont");
 let mainCont = document.querySelector(".main-cont");
 let textareaCont = document.querySelector(".textarea-cont");
 let allPriorityColors = document.querySelectorAll(".priority-color");
+let toolBoxColors = document.querySelectorAll(".color");
+
 let lockClass = "fa-lock";
 let unlockClass = "fa-lock-open";
 
 let colors = ["lightpink", "lightblue", "lightgreen", "black"];
 let modalPriorityColor = colors[colors.length - 1];
 
+let addFlag = false;
+let removeFalg = false;
+
+let ticketsArr = [];
+
+for (let i = 0; i < toolBoxColors.length; i++) {
+  toolBoxColors[i].addEventListener("click", (e) => {
+    let currentToolBoxColor = toolBoxColors[i].classList[0];
+    let filteredTickets = ticketsArr.filter(
+      (ticket, idx) => currentToolBoxColor === ticket.ticketColor
+    );
+
+    // remove previous tickets
+    let allTicketsCont = document.querySelectorAll(".ticket-cont");
+    for (let i = 0; i < allTicketsCont.length; i++) {
+      allTicketsCont[i].remove();
+    }
+
+    filteredTickets.forEach((ticket, idx) => {
+      createTicket(ticket.ticketColor, ticket.ticketTask, ticket.ticketId);
+    });
+  });
+  toolBoxColors[i].addEventListener("dblclick", (e) => {
+    // remove previous tickets
+    let allTicketsCont = document.querySelectorAll(".ticket-cont");
+    for (let i = 0; i < allTicketsCont.length; i++) {
+      allTicketsCont[i].remove();
+    }
+
+    ticketsArr.forEach((ticket, idx) => {
+      createTicket(ticket.ticketColor, ticket.ticketTask, ticket.ticketId);
+    });
+  });
+}
 // listener for modal coloring
 allPriorityColors.forEach((colorElem, idx) => {
   colorElem.addEventListener("click", (e) => {
@@ -22,8 +58,6 @@ allPriorityColors.forEach((colorElem, idx) => {
   });
 });
 
-let addFlag = false;
-let removeFalg = false;
 addBtn.addEventListener("click", (e) => {
   // Display Modal
   // AddFlag = true -> display modal
@@ -44,22 +78,19 @@ removeBtn.addEventListener("click", (e) => {
 modalCont.addEventListener("keydown", (e) => {
   let key = e.key;
   if (key === "Shift") {
-    createTicket(modalPriorityColor, textareaCont.value, shortid());
-    modalCont.style.display = "none";
-    textareaCont.value = "";
+    createTicket(modalPriorityColor, textareaCont.value);
+    setModalToDefault();
     addFlag = !addFlag;
-  }
-  if (key === "escape") {
-    modalCont.style.display = "none";
   }
 });
 
 function createTicket(ticketColor, ticketTask, ticketId) {
+  let id = ticketId || shortid();
   let ticketCont = document.createElement("div");
   ticketCont.setAttribute("class", "ticket-cont");
   ticketCont.innerHTML = `
         <div class="ticket-color ${ticketColor}"></div>
-        <div class="ticket-id">${ticketId}</div>
+        <div class="ticket-id">${id}</div>
         <div class="task-area">
           ${ticketTask}
         </div>
@@ -69,10 +100,13 @@ function createTicket(ticketColor, ticketTask, ticketId) {
   `;
   mainCont.appendChild(ticketCont);
 
+  if (!ticketId) ticketsArr.push({ ticketColor, ticketTask, ticketId: id });
+
   ticketCont.addEventListener("click", (e) => {
     handleRemove(ticketCont);
   });
   handleLock(ticketCont);
+  handleColor(ticketCont);
 }
 
 function handleRemove(ticket) {
@@ -97,4 +131,29 @@ function handleLock(ticket) {
       ticketTaskArea.setAttribute("contentEditable", false);
     }
   });
+}
+
+function handleColor(ticket) {
+  const ticketColor = ticket.querySelector(".ticket-color");
+  ticketColor.addEventListener("click", (e) => {
+    const currentTicketColor = ticketColor.classList[1];
+    let currentTicketColorIdx = colors.findIndex(
+      (color) => color === currentTicketColor
+    );
+    currentTicketColorIdx++;
+    let newTicketColorIdx = currentTicketColorIdx % colors.length;
+    let newTicketColor = colors[newTicketColorIdx];
+    ticketColor.classList.remove(currentTicketColor);
+    ticketColor.classList.add(newTicketColor);
+  });
+}
+
+function setModalToDefault() {
+  modalCont.style.display = "none";
+  textareaCont.value = "";
+  modalPriorityColor = colors[colors.length - 1];
+  allPriorityColors.forEach((color, idx) => {
+    color.classList.remove("border");
+  });
+  allPriorityColors[allPriorityColors.length - 1].classList.add("border");
 }
